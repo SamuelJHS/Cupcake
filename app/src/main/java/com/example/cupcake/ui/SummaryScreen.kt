@@ -18,15 +18,17 @@ package com.example.cupcake.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.cupcake.R
 import com.example.cupcake.data.OrderUiState
 import com.example.cupcake.ui.components.FormattedPriceLabel
@@ -88,37 +92,81 @@ fun OrderSummaryScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(dimensionResource(R.dimen.padding_medium)),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Kartu rincian pilihan
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    items.forEachIndexed { index, item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = item.first,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = item.second,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 16.dp)
+                            )
+                        }
+                        if (index < items.lastIndex) {
+                            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    }
+                }
+            }
+            // Kartu total harga
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                FormattedPriceLabel(
+                    subtotal = orderUiState.price,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                )
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(dimensionResource(R.dimen.padding_medium)),
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
         ) {
-            items.forEach { item ->
-                Text(item.first.uppercase())
-                Text(text = item.second, fontWeight = FontWeight.Bold)
-                Divider(thickness = dimensionResource(R.dimen.thickness_divider))
-            }
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-            FormattedPriceLabel(
-                subtotal = orderUiState.price,
-                modifier = Modifier.align(Alignment.End)
-            )
-        }
-        Row(
-            modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                onClick = { onSendButtonClicked(newOrder, orderSummary) }
             ) {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onSendButtonClicked(newOrder, orderSummary) }
-                ) {
-                    Text(stringResource(R.string.send))
-                }
-                OutlinedButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onCancelButtonClicked
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
+                Text(stringResource(R.string.send))
+            }
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                onClick = onCancelButtonClicked
+            ) {
+                Text(stringResource(R.string.cancel))
             }
         }
     }

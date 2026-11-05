@@ -15,15 +15,22 @@
  */
 package com.example.cupcake.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
@@ -37,7 +44,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.cupcake.R
 import com.example.cupcake.data.Opsi
 import com.example.cupcake.ui.components.FormattedPriceLabel
@@ -54,7 +64,7 @@ private fun formatRupiah(jumlah: Int): String {
 
 /**
  * Layar umum untuk memilih salah satu komponen (prosesor, RAM, hardisk, dst.).
- * Setiap opsi ditampilkan sebagai [RadioButton] beserta tambahan harganya.
+ * Setiap opsi tampil sebagai kartu; kartu yang dipilih berwarna dan berbingkai tebal.
  *
  * [onSelectionChanged] dipanggil dengan NAMA opsi yang dipilih,
  * [onCancelButtonClicked] membatalkan pesanan,
@@ -75,53 +85,79 @@ fun SelectOptionScreen(
         modifier = modifier,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(dimensionResource(R.dimen.padding_medium)),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             options.forEach { item ->
-                Row(
+                val selected = selectedValue == item.nama
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .selectable(
-                            selected = selectedValue == item.nama,
+                            selected = selected,
+                            role = Role.RadioButton,
                             onClick = {
                                 selectedValue = item.nama
                                 onSelectionChanged(item.nama)
                             }
                         ),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedValue == item.nama,
-                        onClick = {
-                            selectedValue = item.nama
-                            onSelectionChanged(item.nama)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (selected) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    ),
+                    border = BorderStroke(
+                        width = if (selected) 2.dp else 1.dp,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
                         }
                     )
-                    Text(
-                        text = item.nama,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = if (item.harga == 0) {
-                            stringResource(R.string.termasuk)
-                        } else {
-                            "+" + formatRupiah(item.harga)
-                        },
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selected, onClick = null)
+                        Text(
+                            text = item.nama,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp)
+                        )
+                        Text(
+                            text = if (item.harga == 0) {
+                                stringResource(R.string.termasuk)
+                            } else {
+                                "+" + formatRupiah(item.harga)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
                 }
             }
-            Divider(
-                thickness = dimensionResource(R.dimen.thickness_divider),
-                modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
-            )
+            Spacer(modifier = Modifier.height(8.dp))
             FormattedPriceLabel(
                 subtotal = subtotal,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(
-                        top = dimensionResource(R.dimen.padding_medium),
-                        bottom = dimensionResource(R.dimen.padding_medium)
-                    )
+                modifier = Modifier.align(Alignment.End)
             )
         }
         Row(
@@ -133,12 +169,14 @@ fun SelectOptionScreen(
         ) {
             OutlinedButton(
                 modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
                 onClick = onCancelButtonClicked
             ) {
                 Text(stringResource(R.string.cancel))
             }
             Button(
                 modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
                 // tombol aktif setelah pengguna memilih salah satu opsi
                 enabled = selectedValue.isNotEmpty(),
                 onClick = onNextButtonClicked
