@@ -16,103 +16,74 @@
 package com.example.cupcake.ui
 
 import androidx.lifecycle.ViewModel
+import com.example.cupcake.data.DataSource
 import com.example.cupcake.data.OrderUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Locale
 
-/** Price for a single cupcake */
-private const val PRICE_PER_CUPCAKE = 2.00
-
-/** Additional cost for same day pickup of an order */
-private const val PRICE_FOR_SAME_DAY_PICKUP = 3.00
-
 /**
- * [OrderViewModel] holds information about a cupcake order in terms of quantity, flavor, and
- * pickup date. It also knows how to calculate the total price based on these order details.
+ * [OrderViewModel] menyimpan pilihan komponen komputer/notebook pelanggan
+ * dan menghitung perkiraan total harganya.
  */
 class OrderViewModel : ViewModel() {
 
-    /**
-     * Cupcake state for this order
-     */
-    private val _uiState = MutableStateFlow(OrderUiState(pickupOptions = pickupOptions()))
+    private val _uiState = MutableStateFlow(OrderUiState())
     val uiState: StateFlow<OrderUiState> = _uiState.asStateFlow()
 
-    /**
-     * Set the quantity [numberCupcakes] of cupcakes for this order's state and update the price
-     */
-    fun setQuantity(numberCupcakes: Int) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                quantity = numberCupcakes,
-                price = calculatePrice(quantity = numberCupcakes)
-            )
-        }
-    }
+    fun setJenis(nama: String) = updateState { it.copy(jenis = nama) }
 
-    /**
-     * Set the [desiredFlavor] of cupcakes for this order's state.
-     * Only 1 flavor can be selected for the whole order.
-     */
-    fun setFlavor(desiredFlavor: String) {
-        _uiState.update { currentState ->
-            currentState.copy(flavor = desiredFlavor)
-        }
-    }
+    fun setProsesor(nama: String) = updateState { it.copy(prosesor = nama) }
 
-    /**
-     * Set the [pickupDate] for this order's state and update the price
-     */
-    fun setDate(pickupDate: String) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                date = pickupDate,
-                price = calculatePrice(pickupDate = pickupDate)
-            )
-        }
-    }
+    fun setRam(nama: String) = updateState { it.copy(ram = nama) }
 
-    /**
-     * Reset the order state
-     */
+    fun setTipeHardisk(nama: String) = updateState { it.copy(tipeHardisk = nama) }
+
+    fun setUkuranHardisk(nama: String) = updateState { it.copy(ukuranHardisk = nama) }
+
+    fun setMonitor(nama: String) = updateState { it.copy(monitor = nama) }
+
+    fun setGpu(nama: String) = updateState { it.copy(gpu = nama) }
+
+    /** Mengosongkan semua pilihan (dipakai tombol Cancel). */
     fun resetOrder() {
-        _uiState.value = OrderUiState(pickupOptions = pickupOptions())
+        _uiState.value = OrderUiState()
     }
 
     /**
-     * Returns the calculated price based on the order details.
+     * Mengubah state lalu langsung menghitung ulang harga,
+     * jadi harga selalu sinkron dengan pilihan terbaru.
      */
-    private fun calculatePrice(
-        quantity: Int = _uiState.value.quantity,
-        pickupDate: String = _uiState.value.date
-    ): String {
-        var calculatedPrice = quantity * PRICE_PER_CUPCAKE
-        // If the user selected the first option (today) for pickup, add the surcharge
-        if (pickupOptions()[0] == pickupDate) {
-            calculatedPrice += PRICE_FOR_SAME_DAY_PICKUP
+    private fun updateState(ubah: (OrderUiState) -> OrderUiState) {
+        _uiState.update { lama ->
+            val baru = ubah(lama)
+            baru.copy(price = hitungHarga(baru))
         }
-        val formattedPrice = NumberFormat.getCurrencyInstance().format(calculatedPrice)
-        return formattedPrice
     }
 
     /**
-     * Returns a list of date options starting with the current date and the following 3 dates.
+     * Total = harga dasar (desktop/notebook) + tambahan tiap komponen yang dipilih.
+     * Komponen yang belum dipilih dihitung 0.
      */
-    private fun pickupOptions(): List<String> {
-        val dateOptions = mutableListOf<String>()
-        val formatter = SimpleDateFormat("E MMM d", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        // add current date and the following 3 dates.
-        repeat(4) {
-            dateOptions.add(formatter.format(calendar.time))
-            calendar.add(Calendar.DATE, 1)
-        }
-        return dateOptions
+    private fun hitungHarga(state: OrderUiState): String {
+        val total =
+            DataSource.harga(DataSource.jenisOptions, state.jenis) +
+                    DataSource.harga(DataSource.prosesorOptions, state.prosesor) +
+                    DataSource.harga(DataSource.ramOptions, state.ram) +
+                    DataSource.harga(DataSource.tipeHardiskOptions, state.tipeHardisk) +
+                    DataSource.harga(DataSource.ukuranHardiskOptions, state.ukuranHardisk) +
+                    DataSource.harga(DataSource.monitorOptions, state.monitor) +
+                    DataSource.harga(DataSource.gpuOptions, state.gpu)
+
+        return formatRupiah(total)
+    }
+
+    private fun formatRupiah(jumlah: Int): String {
+        val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID"))
+        format.maximumFractionDigits = 0
+        return format.format(jumlah)
     }
 }
