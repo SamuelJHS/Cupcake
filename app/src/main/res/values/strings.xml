@@ -14,33 +14,39 @@
      limitations under the License.
 -->
 <resources>
-    <string name="app_name">Cupcake</string>
-    <string name="order_cupcakes">Order Cupcakes</string>
-    <string name="one_cupcake">One Cupcake</string>
-    <string name="six_cupcakes">Six Cupcakes</string>
-    <string name="twelve_cupcakes">Twelve Cupcakes</string>
-    <string name="choose_flavor">Choose Flavor</string>
-    <string name="vanilla">Vanilla</string>
-    <string name="chocolate">Chocolate</string>
-    <string name="red_velvet">Red Velvet</string>
-    <string name="salted_caramel">Salted Caramel</string>
-    <string name="coffee">Coffee</string>
-    <string name="special_flavor">Special Flavor</string>
-    <string name="cancel">Cancel</string>
-    <string name="next">Next</string>
-    <string name="choose_pickup_date">Choose Pickup Date</string>
-    <string name="order_summary">Order Summary</string>
-    <string name="send">Send Order to Another App</string>
-    <string name="quantity">Quantity</string>
-    <string name="flavor">Flavor</string>
-    <string name="pickup_date">Pickup date</string>
-    <string name="subtotal_price">Subtotal %s</string>
-    <string name="total_price">Total %s</string>
-    <string name="new_cupcake_order">New Cupcake Order</string>
-    <string name="order_details">Quantity: %1$s \nFlavor: %2$s \nPickup date: %3$s \nTotal: %4$s \n\nThank you!</string>
-    <string name="back_button">Back</string>
-    <plurals name="cupcakes">
-        <item quantity="one">%d cupcake</item>
-        <item quantity="other">%d cupcakes</item>
-    </plurals>
+    <!-- Ganti "Toko Komputer" dengan nama toko kelompok Anda -->
+    <string name="app_name">Toko Komputer</string>
+    <string name="pilih_perangkat">Rakit Komputer / Notebook Impian Anda</string>
+
+    <!-- Judul tiap layar -->
+    <string name="pilih_prosesor">Pilih Prosesor</string>
+    <string name="pilih_ram">Pilih Memori (RAM)</string>
+    <string name="pilih_tipe_hardisk">Pilih Tipe Hardisk</string>
+    <string name="pilih_ukuran_hardisk">Pilih Ukuran Hardisk</string>
+    <string name="pilih_monitor">Pilih Ukuran Monitor</string>
+    <string name="pilih_gpu">Pilih Kartu Grafis</string>
+    <string name="order_summary">Ringkasan Pesanan</string>
+
+    <!-- Tombol -->
+    <string name="cancel">Batal</string>
+    <string name="next">Lanjut</string>
+    <string name="send">Kirim Pesanan ke Aplikasi Lain</string>
+    <string name="back_button">Kembali</string>
+
+    <!-- Label ringkasan -->
+    <string name="label_jenis">Jenis</string>
+    <string name="label_prosesor">Prosesor</string>
+    <string name="label_ram">Memori (RAM)</string>
+    <string name="label_tipe_hardisk">Tipe hardisk</string>
+    <string name="label_ukuran_hardisk">Ukuran hardisk</string>
+    <string name="label_monitor">Ukuran monitor</string>
+    <string name="label_gpu">Kartu grafis</string>
+
+    <!-- Harga -->
+    <string name="subtotal_price">Perkiraan harga: %s</string>
+    <string name="termasuk">Termasuk</string>
+
+    <!-- Pesan yang dibagikan ke aplikasi lain -->
+    <string name="new_order">Pesanan Komputer Baru</string>
+    <string name="order_details">Jenis: %1$s \nProsesor: %2$s \nRAM: %3$s \nTipe hardisk: %4$s \nUkuran hardisk: %5$s \nMonitor: %6$s \nKartu grafis: %7$s \nPerkiraan harga: %8$s \n\nTerima kasih!</string>
 </resources>

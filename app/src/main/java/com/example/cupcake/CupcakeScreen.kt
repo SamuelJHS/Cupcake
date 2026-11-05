@@ -15,41 +15,40 @@
  */
 package com.example.cupcake
 
+import android.content.Context
+import android.content.Intent
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.example.cupcake.ui.OrderViewModel
 import androidx.navigation.compose.NavHost
-import androidx.compose.foundation.layout.padding
 import androidx.navigation.compose.composable
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.res.dimensionResource
-import com.example.cupcake.ui.StartOrderScreen
-import com.example.cupcake.data.DataSource
-import androidx.compose.ui.platform.LocalContext
-import com.example.cupcake.ui.SelectOptionScreen
-import androidx.compose.foundation.layout.fillMaxHeight
-import com.example.cupcake.data.DataSource.flavors
-import com.example.cupcake.ui.OrderSummaryScreen
-import android.content.Context
-import android.content.Intent
-import androidx.annotation.StringRes
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.cupcake.data.DataSource
+import com.example.cupcake.data.Opsi
+import com.example.cupcake.ui.OrderSummaryScreen
+import com.example.cupcake.ui.OrderViewModel
+import com.example.cupcake.ui.SelectOptionScreen
+import com.example.cupcake.ui.StartOrderScreen
 
+/** Membagikan ringkasan pesanan ke aplikasi lain (WhatsApp, email, dll.). */
 private fun shareOrder(context: Context, subject: String, summary: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
@@ -59,21 +58,23 @@ private fun shareOrder(context: Context, subject: String, summary: String) {
     context.startActivity(
         Intent.createChooser(
             intent,
-            context.getString(R.string.new_cupcake_order)
+            context.getString(R.string.new_order)
         )
     )
 }
 
-
-
 /**
- * Composable that displays the topBar and displays back button if back navigation is possible.
+ * Daftar layar (rute) di aplikasi beserta judulnya di top bar.
+ * Urutan alur: Start -> Prosesor -> Ram -> TipeHardisk -> UkuranHardisk -> Monitor -> Gpu -> Summary
  */
-
 enum class CupcakeScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
-    Flavor(title = R.string.choose_flavor),
-    Pickup(title = R.string.choose_pickup_date),
+    Prosesor(title = R.string.pilih_prosesor),
+    Ram(title = R.string.pilih_ram),
+    TipeHardisk(title = R.string.pilih_tipe_hardisk),
+    UkuranHardisk(title = R.string.pilih_ukuran_hardisk),
+    Monitor(title = R.string.pilih_monitor),
+    Gpu(title = R.string.pilih_gpu),
     Summary(title = R.string.order_summary)
 }
 
@@ -85,6 +86,9 @@ private fun cancelOrderAndNavigateToStart(
     navController.popBackStack(CupcakeScreen.Start.name, inclusive = false)
 }
 
+/**
+ * Composable yang menampilkan top bar dan tombol kembali jika bisa navigasi mundur.
+ */
 @Composable
 fun CupcakeAppBar(
     currentScreen: CupcakeScreen,
@@ -106,84 +110,141 @@ fun CupcakeAppBar(
             }
         }
     )
+}
 
-    @Composable
-    fun CupcakeApp(
-        viewModel: OrderViewModel = viewModel(),
-        navController: NavHostController = rememberNavController()
-    ) {
-        val backStackEntry by navController.currentBackStackEntryAsState()
-        val currentScreen = CupcakeScreen.valueOf(
-            backStackEntry?.destination?.route ?: CupcakeScreen.Start.name
+/**
+ * Membuat satu layar pilihan komponen (dipakai berulang untuk prosesor, RAM, dst.)
+ * supaya kode NavHost tidak panjang dan berulang.
+ */
+private fun NavGraphBuilder.layarPilihan(
+    screen: CupcakeScreen,
+    nextScreen: CupcakeScreen,
+    options: List<Opsi>,
+    onSelect: (String) -> Unit,
+    viewModel: OrderViewModel,
+    navController: NavHostController
+) {
+    composable(route = screen.name) {
+        val uiState by viewModel.uiState.collectAsState()
+        SelectOptionScreen(
+            subtotal = uiState.price,
+            options = options,
+            onSelectionChanged = onSelect,
+            onNextButtonClicked = { navController.navigate(nextScreen.name) },
+            onCancelButtonClicked = {
+                cancelOrderAndNavigateToStart(viewModel, navController)
+            },
+            modifier = Modifier.fillMaxHeight()
         )
+    }
+}
 
-        Scaffold(
-            topBar = {
-                CupcakeAppBar(
-                    currentScreen = currentScreen,
-                    canNavigateBack = navController.previousBackStackEntry != null,
-                    navigateUp = { navController.navigateUp() }
+/**
+ * Composable utama aplikasi: mengatur navigasi antar layar.
+ */
+@Composable
+fun CupcakeApp(
+    viewModel: OrderViewModel = viewModel(),
+    navController: NavHostController = rememberNavController()
+) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentScreen = CupcakeScreen.valueOf(
+        backStackEntry?.destination?.route ?: CupcakeScreen.Start.name
+    )
+
+    Scaffold(
+        topBar = {
+            CupcakeAppBar(
+                currentScreen = currentScreen,
+                canNavigateBack = navController.previousBackStackEntry != null,
+                navigateUp = { navController.navigateUp() }
+            )
+        }
+    ) { innerPadding ->
+        val uiState by viewModel.uiState.collectAsState()
+
+        NavHost(
+            navController = navController,
+            startDestination = CupcakeScreen.Start.name,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            // 1. Pilih jenis perangkat: Desktop / Notebook
+            composable(route = CupcakeScreen.Start.name) {
+                StartOrderScreen(
+                    jenisOptions = DataSource.jenisOptions,
+                    onNextButtonClicked = {
+                        viewModel.setJenis(it)
+                        navController.navigate(CupcakeScreen.Prosesor.name)
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_medium))
                 )
             }
-        ) { innerPadding ->
-            val uiState by viewModel.uiState.collectAsState()
-            NavHost(
-                navController = navController,
-                startDestination = CupcakeScreen.Start.name,
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                composable(route = CupcakeScreen.Start.name) {
-                    StartOrderScreen(
-                        quantityOptions = DataSource.quantityOptions,
-                        onNextButtonClicked = {
-                            viewModel.setQuantity(it)
-                            navController.navigate(CupcakeScreen.Flavor.name)
-                        },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(dimensionResource(R.dimen.padding_medium))
-                    )
-                }
 
+            // 2-7. Layar pilihan komponen
+            layarPilihan(
+                screen = CupcakeScreen.Prosesor,
+                nextScreen = CupcakeScreen.Ram,
+                options = DataSource.prosesorOptions,
+                onSelect = { viewModel.setProsesor(it) },
+                viewModel = viewModel,
+                navController = navController
+            )
+            layarPilihan(
+                screen = CupcakeScreen.Ram,
+                nextScreen = CupcakeScreen.TipeHardisk,
+                options = DataSource.ramOptions,
+                onSelect = { viewModel.setRam(it) },
+                viewModel = viewModel,
+                navController = navController
+            )
+            layarPilihan(
+                screen = CupcakeScreen.TipeHardisk,
+                nextScreen = CupcakeScreen.UkuranHardisk,
+                options = DataSource.tipeHardiskOptions,
+                onSelect = { viewModel.setTipeHardisk(it) },
+                viewModel = viewModel,
+                navController = navController
+            )
+            layarPilihan(
+                screen = CupcakeScreen.UkuranHardisk,
+                nextScreen = CupcakeScreen.Monitor,
+                options = DataSource.ukuranHardiskOptions,
+                onSelect = { viewModel.setUkuranHardisk(it) },
+                viewModel = viewModel,
+                navController = navController
+            )
+            layarPilihan(
+                screen = CupcakeScreen.Monitor,
+                nextScreen = CupcakeScreen.Gpu,
+                options = DataSource.monitorOptions,
+                onSelect = { viewModel.setMonitor(it) },
+                viewModel = viewModel,
+                navController = navController
+            )
+            layarPilihan(
+                screen = CupcakeScreen.Gpu,
+                nextScreen = CupcakeScreen.Summary,
+                options = DataSource.gpuOptions,
+                onSelect = { viewModel.setGpu(it) },
+                viewModel = viewModel,
+                navController = navController
+            )
 
-                composable(route = CupcakeScreen.Flavor.name) {
-                    val context = LocalContext.current
-                    SelectOptionScreen(
-                        subtotal = uiState.price,
-                        onNextButtonClicked = { navController.navigate(CupcakeScreen.Pickup.name) },
-                        onCancelButtonClicked = {
-                            cancelOrderAndNavigateToStart(viewModel, navController)
-                        },
-                        options = DataSource.flavors.map { id -> context.resources.getString(id) },
-                        onSelectionChanged = { viewModel.setFlavor(it) },
-                        modifier = Modifier.fillMaxHeight()
-                    )
-                }
-                composable(route = CupcakeScreen.Pickup.name) {
-                    SelectOptionScreen(
-                        subtotal = uiState.price,
-                        onNextButtonClicked = { navController.navigate(CupcakeScreen.Summary.name) },
-                        onCancelButtonClicked = {
-                            cancelOrderAndNavigateToStart(viewModel, navController)
-                        },
-                        options = uiState.pickupOptions,
-                        onSelectionChanged = { viewModel.setDate(it) },
-                        modifier = Modifier.fillMaxHeight()
-                    )
-                }
-                composable(route = CupcakeScreen.Summary.name) {
-                    val context = LocalContext.current
-                    OrderSummaryScreen(
-                        orderUiState = uiState,
-                        onCancelButtonClicked = {
-                            cancelOrderAndNavigateToStart(viewModel, navController)
-                        },
-                        onSendButtonClicked = { subject: String, summary: String ->
-                            shareOrder(context, subject = subject, summary = summary)
-                        },
-                        modifier = Modifier.fillMaxHeight()
-                    )
-                }
+            // 8. Ringkasan + perkiraan harga
+            composable(route = CupcakeScreen.Summary.name) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                OrderSummaryScreen(
+                    orderUiState = uiState,
+                    onCancelButtonClicked = {
+                        cancelOrderAndNavigateToStart(viewModel, navController)
+                    },
+                    onSendButtonClicked = { subject: String, summary: String ->
+                        shareOrder(context, subject = subject, summary = summary)
+                    },
+                    modifier = Modifier.fillMaxHeight()
+                )
             }
         }
     }

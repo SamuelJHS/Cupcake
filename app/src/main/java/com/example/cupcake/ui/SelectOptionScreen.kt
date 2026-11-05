@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -38,19 +39,31 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.cupcake.R
+import com.example.cupcake.data.Opsi
 import com.example.cupcake.ui.components.FormattedPriceLabel
 import com.example.cupcake.ui.theme.CupcakeTheme
+import java.text.NumberFormat
+import java.util.Locale
+
+/** Format angka menjadi Rupiah tanpa desimal, mis. 1500000 -> "Rp1.500.000". */
+private fun formatRupiah(jumlah: Int): String {
+    val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID"))
+    format.maximumFractionDigits = 0
+    return format.format(jumlah)
+}
 
 /**
- * Composable that displays the list of items as [RadioButton] options,
- * [onSelectionChanged] lambda that notifies the parent composable when a new value is selected,
- * [onCancelButtonClicked] lambda that cancels the order when user clicks cancel and
- * [onNextButtonClicked] lambda that triggers the navigation to next screen
+ * Layar umum untuk memilih salah satu komponen (prosesor, RAM, hardisk, dst.).
+ * Setiap opsi ditampilkan sebagai [RadioButton] beserta tambahan harganya.
+ *
+ * [onSelectionChanged] dipanggil dengan NAMA opsi yang dipilih,
+ * [onCancelButtonClicked] membatalkan pesanan,
+ * [onNextButtonClicked] pindah ke layar berikutnya (aktif setelah ada pilihan).
  */
 @Composable
 fun SelectOptionScreen(
     subtotal: String,
-    options: List<String>,
+    options: List<Opsi>,
     onSelectionChanged: (String) -> Unit = {},
     onCancelButtonClicked: () -> Unit = {},
     onNextButtonClicked: () -> Unit = {},
@@ -65,23 +78,36 @@ fun SelectOptionScreen(
         Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
             options.forEach { item ->
                 Row(
-                    modifier = Modifier.selectable(
-                        selected = selectedValue == item,
-                        onClick = {
-                            selectedValue = item
-                            onSelectionChanged(item)
-                        }
-                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = selectedValue == item.nama,
+                            onClick = {
+                                selectedValue = item.nama
+                                onSelectionChanged(item.nama)
+                            }
+                        ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
-                        selected = selectedValue == item,
+                        selected = selectedValue == item.nama,
                         onClick = {
-                            selectedValue = item
-                            onSelectionChanged(item)
+                            selectedValue = item.nama
+                            onSelectionChanged(item.nama)
                         }
                     )
-                    Text(item)
+                    Text(
+                        text = item.nama,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = if (item.harga == 0) {
+                            stringResource(R.string.termasuk)
+                        } else {
+                            "+" + formatRupiah(item.harga)
+                        },
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
             Divider(
@@ -113,7 +139,7 @@ fun SelectOptionScreen(
             }
             Button(
                 modifier = Modifier.weight(1f),
-                // the button is enabled when the user makes a selection
+                // tombol aktif setelah pengguna memilih salah satu opsi
                 enabled = selectedValue.isNotEmpty(),
                 onClick = onNextButtonClicked
             ) {
@@ -128,8 +154,12 @@ fun SelectOptionScreen(
 fun SelectOptionPreview() {
     CupcakeTheme {
         SelectOptionScreen(
-            subtotal = "299.99",
-            options = listOf("Option 1", "Option 2", "Option 3", "Option 4"),
+            subtotal = "Rp7.500.000",
+            options = listOf(
+                Opsi("Intel Core i3", 0),
+                Opsi("Intel Core i5", 1_500_000),
+                Opsi("Intel Core i7", 3_500_000)
+            ),
             modifier = Modifier.fillMaxHeight()
         )
     }

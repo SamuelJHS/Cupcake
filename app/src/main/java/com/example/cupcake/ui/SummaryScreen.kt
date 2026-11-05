@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.OutlinedButton
@@ -30,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,9 +42,9 @@ import com.example.cupcake.ui.components.FormattedPriceLabel
 import com.example.cupcake.ui.theme.CupcakeTheme
 
 /**
- * This composable expects [orderUiState] that represents the order state, [onCancelButtonClicked]
- * lambda that triggers canceling the order and passes the final order to [onSendButtonClicked]
- * lambda
+ * Layar ringkasan: menampilkan semua pilihan dan perkiraan total harga dari [orderUiState],
+ * [onCancelButtonClicked] membatalkan pesanan, dan [onSendButtonClicked] membagikan
+ * pesanan (subjek, isi) ke aplikasi lain.
  */
 @Composable
 fun OrderSummaryScreen(
@@ -52,38 +53,41 @@ fun OrderSummaryScreen(
     onSendButtonClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val resources = LocalContext.current.resources
-
-    val numberOfCupcakes = resources.getQuantityString(
-        R.plurals.cupcakes,
-        orderUiState.quantity,
-        orderUiState.quantity
-    )
-    //Load and format a string resource with the parameters.
+    // Teks yang dibagikan ke aplikasi lain
     val orderSummary = stringResource(
         R.string.order_details,
-        numberOfCupcakes,
-        orderUiState.flavor,
-        orderUiState.date,
-        orderUiState.quantity
+        orderUiState.jenis,
+        orderUiState.prosesor,
+        orderUiState.ram,
+        orderUiState.tipeHardisk,
+        orderUiState.ukuranHardisk,
+        orderUiState.monitor,
+        orderUiState.gpu,
+        orderUiState.price
     )
-    val newOrder = stringResource(R.string.new_cupcake_order)
-    //Create a list of order summary to display
+    val newOrder = stringResource(R.string.new_order)
+
+    // Daftar baris ringkasan yang ditampilkan di layar
     val items = listOf(
-        // Summary line 1: display selected quantity
-        Pair(stringResource(R.string.quantity), numberOfCupcakes),
-        // Summary line 2: display selected flavor
-        Pair(stringResource(R.string.flavor), orderUiState.flavor),
-        // Summary line 3: display selected pickup date
-        Pair(stringResource(R.string.pickup_date), orderUiState.date)
+        Pair(stringResource(R.string.label_jenis), orderUiState.jenis),
+        Pair(stringResource(R.string.label_prosesor), orderUiState.prosesor),
+        Pair(stringResource(R.string.label_ram), orderUiState.ram),
+        Pair(stringResource(R.string.label_tipe_hardisk), orderUiState.tipeHardisk),
+        Pair(stringResource(R.string.label_ukuran_hardisk), orderUiState.ukuranHardisk),
+        Pair(stringResource(R.string.label_monitor), orderUiState.monitor),
+        Pair(stringResource(R.string.label_gpu), orderUiState.gpu)
     )
 
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
+        // Dibuat bisa di-scroll karena barisnya cukup banyak
         Column(
-            modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(dimensionResource(R.dimen.padding_medium)),
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
         ) {
             items.forEach { item ->
@@ -125,7 +129,16 @@ fun OrderSummaryScreen(
 fun OrderSummaryPreview() {
     CupcakeTheme {
         OrderSummaryScreen(
-            orderUiState = OrderUiState(0, "Test", "Test", "$300.00"),
+            orderUiState = OrderUiState(
+                jenis = "Notebook",
+                prosesor = "Intel Core i5",
+                ram = "16 GB",
+                tipeHardisk = "SSD NVMe",
+                ukuranHardisk = "512 GB",
+                monitor = "15.6 inci",
+                gpu = "NVIDIA GTX 1650",
+                price = "Rp11.300.000"
+            ),
             onSendButtonClicked = { subject: String, summary: String -> },
             onCancelButtonClicked = {},
             modifier = Modifier.fillMaxHeight()

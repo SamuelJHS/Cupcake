@@ -15,7 +15,6 @@
  */
 package com.example.cupcake.ui
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,21 +34,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cupcake.R
 import com.example.cupcake.data.DataSource
+import com.example.cupcake.data.Opsi
 import com.example.cupcake.ui.theme.CupcakeTheme
 
 /**
- * Composable that allows the user to select the desired cupcake quantity and expects
- * [onNextButtonClicked] lambda that expects the selected quantity and triggers the navigation to
- * next screen
+ * Layar awal: pelanggan memilih jenis perangkat (Desktop / Notebook).
+ * [onNextButtonClicked] menerima NAMA jenis yang dipilih lalu pindah ke layar berikutnya.
  */
 @Composable
 fun StartOrderScreen(
-    quantityOptions: List<Pair<Int, Int>>,
-    onNextButtonClicked: (Int) -> Unit,
+    jenisOptions: List<Opsi>,
+    onNextButtonClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -63,14 +63,15 @@ fun StartOrderScreen(
         ) {
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
             Image(
-                painter = painterResource(R.drawable.cupcake),
+                painter = painterResource(R.drawable.laptop),
                 contentDescription = null,
-                modifier = Modifier.width(300.dp)
+                modifier = Modifier.width(200.dp)
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
             Text(
-                text = stringResource(R.string.order_cupcakes),
-                style = MaterialTheme.typography.headlineSmall
+                text = stringResource(R.string.pilih_perangkat),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
         }
@@ -81,10 +82,10 @@ fun StartOrderScreen(
                 dimensionResource(id = R.dimen.padding_medium)
             )
         ) {
-            quantityOptions.forEach { item ->
-                SelectQuantityButton(
-                    labelResourceId = item.first,
-                    onClick = { onNextButtonClicked(item.second) }
+            jenisOptions.forEach { item ->
+                SelectJenisButton(
+                    label = item.nama,
+                    onClick = { onNextButtonClicked(item.nama) }
                 )
             }
         }
@@ -92,12 +93,11 @@ fun StartOrderScreen(
 }
 
 /**
- * Customizable button composable that displays the [labelResourceId]
- * and triggers [onClick] lambda when this composable is clicked
+ * Tombol pilihan jenis perangkat dengan teks [label].
  */
 @Composable
-fun SelectQuantityButton(
-    @StringRes labelResourceId: Int,
+fun SelectJenisButton(
+    label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -105,7 +105,7 @@ fun SelectQuantityButton(
         onClick = onClick,
         modifier = modifier.widthIn(min = 250.dp)
     ) {
-        Text(stringResource(labelResourceId))
+        Text(label)
     }
 }
 
@@ -114,7 +114,7 @@ fun SelectQuantityButton(
 fun StartOrderPreview() {
     CupcakeTheme {
         StartOrderScreen(
-            quantityOptions = DataSource.quantityOptions,
+            jenisOptions = DataSource.jenisOptions,
             onNextButtonClicked = {},
             modifier = Modifier
                 .fillMaxSize()
